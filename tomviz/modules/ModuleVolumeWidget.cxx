@@ -54,6 +54,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
             m_ui->label_2->setVisible(show);
             m_ui->cbTransfer2DYAxis->setVisible(show);
           });
+  connect(m_ui->cbTransfer2DYAxis, QOverload<const QString&>::of(&QComboBox::currentTextChanged),
+          this, &ModuleVolumeWidget::transfer2DYAxisScalarsChanged);
 
   connect(m_ui->cbJittering, SIGNAL(toggled(bool)), this,
           SIGNAL(jitteringToggled(const bool)));

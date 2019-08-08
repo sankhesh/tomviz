@@ -348,6 +348,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
             setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
+  connect(m_controllers, &ModuleVolumeWidget::transfer2DYAxisScalarsChanged,
+          this, &ModuleVolume::onTransfer2DYAxisScalarsChanged);
 }
 
 void ModuleVolume::updatePanel()
@@ -462,6 +464,16 @@ int ModuleVolume::scalarsIndex()
     index = activeScalars();
   }
   return index;
+}
+
+void ModuleVolume::onTransfer2DYAxisScalarsChanged(const QString& scalar)
+{
+  if (scalar.compare(QStringLiteral("Gradient")) == 0)
+  {
+    m_volumeMapper->SetTransfer2DYAxisArray(nullptr);
+  }
+  m_volumeMapper->SetTransfer2DYAxisArray(scalar.toLatin1().constData());
+  emit renderNeeded();
 }
 
 } // end of namespace tomviz

@@ -85,6 +85,7 @@ private slots:
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
   int scalarsIndex();
+  void onTransfer2DYAxisScalarsChanged(const QString&);
 };
 } // namespace tomviz
 

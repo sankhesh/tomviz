@@ -67,6 +67,7 @@ signals:
   void specularChanged(const double value);
   void specularPowerChanged(const double value);
   void transferModeChanged(const int mode);
+  void transfer2DYAxisScalarsChanged(const QString& scalars);
   //@}
 
 private:
