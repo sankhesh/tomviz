@@ -24,6 +24,10 @@
 #include <vtkPVRenderView.h>
 #include <vtkPointData.h>
 #include <vtkSMViewProxy.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVArrayInformation.h>
 
 #include <QCheckBox>
 #include <QFormLayout>
@@ -83,6 +87,63 @@ void ModuleVolume::initializeMapper(DataSource* data)
     m_view->Update();
   }
 }
+
+QList<ArrayInfo> ModuleVolume::getArraysInfo(void) const
+{
+  if (!dataSource())
+    return QList<ArrayInfo>();
+  auto sourceProxy = dataSource()->proxy();
+  if (!sourceProxy)
+    return QList<ArrayInfo>();
+  auto dataInfo = dataSource()->proxy()->GetDataInformation();
+  QList<ArrayInfo> arraysInfo;
+  vtkPVDataSetAttributesInformation* pointDataInfo =
+    dataInfo->GetPointDataInformation();
+  if (pointDataInfo) {
+    QList<ArrayInfo> arraysInfo_;
+    int numArrays = pointDataInfo->GetNumberOfArrays();
+    QList<QPair<vtkDataArray*, int>> sortMap;
+    for (int i = 0; i < numArrays; i++) {
+      vtkPVArrayInformation* arrayInfo;
+      arrayInfo = pointDataInfo->GetArrayInformation(i);
+
+      // name, type, data range, data type, active
+      auto arrayName = arrayInfo->GetName();
+      sortMap.push_back(QPair<vtkDataArray*, int>(
+        dataSource()->getScalarsArray(arrayName), i));
+      QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
+      int numComponents = arrayInfo->GetNumberOfComponents();
+      QString dataRange;
+      double range[2];
+      bool active = dataSource()->activeScalars() == arrayName;
+
+      for (int j = 0; j < numComponents; j++) {
+        if (j != 0) {
+          dataRange.append(", ");
+        }
+        arrayInfo->GetComponentRange(j, range);
+        QString componentRange =
+          QString("[%1, %2]").arg(range[0]).arg(range[1]);
+        dataRange.append(componentRange);
+      }
+
+      arraysInfo_.push_back(
+        ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
+                  dataType, active));
+    }
+
+    // Ensure scalars are displayed in the same order even after renaming
+    std::sort(sortMap.begin(), sortMap.end(),
+              [](QPair<vtkDataArray*, int> a, QPair<vtkDataArray*, int> b) {
+                return a.first < b.first;
+              });
+    foreach (auto pair, sortMap) {
+      arraysInfo.push_back(arraysInfo_[pair.second]);
+    }
+  }
+  return arraysInfo;
+}
+
 
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
@@ -255,6 +316,7 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_scalarsCombo = new ScalarsComboBox();
   m_scalarsCombo->setOptions(dataSource(), this);
   m_controllers->formLayout()->insertRow(0, "Active Scalars", m_scalarsCombo);
+  m_controllers->updateTransfer2DYScalarsCombo(getArraysInfo());
 
   QVBoxLayout* layout = new QVBoxLayout;
   panel->setLayout(layout);

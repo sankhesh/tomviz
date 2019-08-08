@@ -17,11 +17,13 @@ class vtkPVRenderView;
 class vtkGPUVolumeRayCastMapper;
 class vtkVolumeProperty;
 class vtkVolume;
+class vtkPVDataInformation;
 
 namespace tomviz {
 
 class ModuleVolumeWidget;
 class ScalarsComboBox;
+struct ArrayInfo;
 
 class ModuleVolume : public Module
 {
@@ -65,6 +67,7 @@ private:
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
+  QList<ArrayInfo> getArraysInfo() const;
 
 private slots:
   /**

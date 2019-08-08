@@ -7,6 +7,8 @@
 #include <QScopedPointer>
 #include <QWidget>
 
+#include <DataPropertiesModel.h>
+
 class QFormLayout;
 
 /**
@@ -37,7 +39,7 @@ public:
    * in the mapper or serialized), so the UI needs to be updated if the state
    * changes or when constructing the UI.
    */
-  void setActiveScalars(const QString& scalars);
+  // void setActiveScalars(const QString& scalars);
   void setJittering(const bool enable);
   void setBlendingMode(const int mode);
   void setInterpolationType(const int type);
@@ -48,6 +50,7 @@ public:
   void setSpecularPower(const double value);
   void setTransferMode(const int transferMode);
   QFormLayout* formLayout();
+  void updateTransfer2DYScalarsCombo(const QList<ArrayInfo>& arraysInfo);
   //@}
 
 signals:

@@ -45,6 +45,16 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   labelsInterp << tr("Nearest Neighbor") << tr("Linear");
   m_ui->cbInterpolation->addItems(labelsInterp);
 
+  m_ui->label_2->hide();
+  m_ui->cbTransfer2DYAxis->hide();
+  connect(m_ui->cbTransferMode,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [=](int idx) {
+            bool show = (idx == 2);
+            m_ui->label_2->setVisible(show);
+            m_ui->cbTransfer2DYAxis->setVisible(show);
+          });
+
   connect(m_ui->cbJittering, SIGNAL(toggled(bool)), this,
           SIGNAL(jitteringToggled(const bool)));
   connect(m_ui->cbBlending, SIGNAL(currentIndexChanged(int)), this,
@@ -133,4 +143,25 @@ QFormLayout* ModuleVolumeWidget::formLayout()
 {
   return m_ui->formLayout;
 }
+
+void ModuleVolumeWidget::updateTransfer2DYScalarsCombo(
+  const QList<ArrayInfo>& arraysInfo)
+{
+  if (!m_ui)
+  {
+    return;
+  }
+  QComboBox* scalarsCombo = m_ui->cbTransfer2DYAxis;
+  scalarsCombo->clear();
+  scalarsCombo->blockSignals(true);
+
+  scalarsCombo->addItem("Gradient");
+  foreach (auto array, arraysInfo) {
+    scalarsCombo->addItem(array.name);
+  }
+  scalarsCombo->setCurrentIndex(0);
+
+  scalarsCombo->blockSignals(false);
+}
+
 } // namespace tomviz
