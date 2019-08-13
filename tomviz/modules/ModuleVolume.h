@@ -55,6 +55,9 @@ public:
 
   vtkDataObject* dataToExport() override;
 
+signals:
+  void transfer2DYAxisScalarsChanged(const QString&);
+
 protected:
   void updateColorMap() override;
 

@@ -206,8 +206,8 @@ void ModuleVolume::updateColorMap()
           vtkImageData::SafeDownCast(dataSource()->dataObject());
         // See if the histogram is done, if it is then update the transfer
         // function.
-        if (auto histogram2D =
-              HistogramManager::instance().getHistogram2D(image)) {
+        if (auto histogram2D = HistogramManager::instance().getHistogram2D(
+              image, QString(m_volumeMapper->GetTransfer2DYAxisArray()))) {
           auto colorMap = vtkColorTransferFunction::SafeDownCast(
             this->colorMap()->GetClientSideObject());
           auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
@@ -350,6 +350,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
           });
   connect(m_controllers, &ModuleVolumeWidget::transfer2DYAxisScalarsChanged,
           this, &ModuleVolume::onTransfer2DYAxisScalarsChanged);
+  connect(m_controllers, &ModuleVolumeWidget::transfer2DYAxisScalarsChanged,
+          this, &ModuleVolume::transfer2DYAxisScalarsChanged);
 }
 
 void ModuleVolume::updatePanel()
@@ -473,6 +475,23 @@ void ModuleVolume::onTransfer2DYAxisScalarsChanged(const QString& scalar)
     m_volumeMapper->SetTransfer2DYAxisArray(nullptr);
   }
   m_volumeMapper->SetTransfer2DYAxisArray(scalar.toLatin1().constData());
+  vtkSmartPointer<vtkImageData> image =
+    vtkImageData::SafeDownCast(dataSource()->dataObject());
+  // See if the histogram is done, if it is then update the transfer
+  // function.
+  if (getTransferMode() == Module::GRADIENT_2D) {
+    if (auto histogram2D = HistogramManager::instance().getHistogram2D(
+          image, QString(m_volumeMapper->GetTransfer2DYAxisArray()))) {
+      auto colorMap = vtkColorTransferFunction::SafeDownCast(
+        this->colorMap()->GetClientSideObject());
+      auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
+        this->opacityMap()->GetClientSideObject());
+      vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
+        histogram2D, *this->transferFunction2DBox(), transferFunction2D(),
+        colorMap, opacityMap);
+      m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+    }
+  }
   emit renderNeeded();
 }
 
