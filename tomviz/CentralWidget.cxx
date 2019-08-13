@@ -30,6 +30,7 @@
 #include "HistogramManager.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "ModuleVolume.h"
 #include "Utilities.h"
 
 namespace tomviz {
@@ -181,6 +182,14 @@ void CentralWidget::setActiveModule(Module* module)
   }
   m_activeModule = module;
   if (m_activeModule) {
+    if (ModuleVolume* v = qobject_cast<ModuleVolume*> (m_activeModule))
+    {
+      connect(v, &ModuleVolume::transfer2DYAxisScalarsChanged, this,
+              [=](const QString& s) {
+                m_transfer2DYaxis = s;
+                refreshHistogram();
+              });
+    }
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
     setColorMapDataSource(module->colorMapDataSource());
@@ -259,7 +268,8 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
 
   vtkSmartPointer<vtkImageData> const imageSP = image;
   auto histogram = HistogramManager::instance().getHistogram(imageSP);
-  auto histogram2D = HistogramManager::instance().getHistogram2D(imageSP);
+  auto histogram2D =
+    HistogramManager::instance().getHistogram2D(imageSP, m_transfer2DYaxis);
 
   if (histogram) {
     setHistogramTable(histogram);

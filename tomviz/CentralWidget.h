@@ -81,6 +81,7 @@ private:
   QPointer<DataSource> m_activeColorMapDataSource;
   QPointer<Module> m_activeModule;
   Transfer2DModel* m_transfer2DModel;
+  QString m_transfer2DYaxis;
 };
 } // namespace tomviz
 
