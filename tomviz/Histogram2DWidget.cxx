@@ -128,4 +128,30 @@ void Histogram2DWidget::updateTransfer2D()
 {
   m_chartHistogram2D->GenerateTransfer2D();
 }
+
+void Histogram2DWidget::setXAxisTitle(const QString& t)
+{
+  m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM)
+    ->SetTitle(t.toLatin1().constData());
+  m_histogramView->GetRenderWindow()->Render();
+}
+
+QString Histogram2DWidget::xAxisTitle() const
+{
+  return QString(m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM)->GetTitle());
+}
+
+void Histogram2DWidget::setYAxisTitle(const QString& t)
+{
+  std::cout << "\n Setting the title to: " << t.toStdString() << std::endl;
+  m_chartHistogram2D->GetAxis(vtkAxis::TOP)->SetTitle(t.toLatin1().constData());
+  m_chartHistogram2D->GetAxis(vtkAxis::TOP)->Update();
+  this->onTransfer2DChanged();
+}
+
+QString Histogram2DWidget::yAxisTitle() const
+{
+  return QString(m_chartHistogram2D->GetAxis(vtkAxis::TOP)->GetTitle());
+}
+
 } // namespace tomviz

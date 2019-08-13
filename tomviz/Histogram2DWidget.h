@@ -51,6 +51,16 @@ public:
    */
   void setTransfer2D(vtkImageData* transfer2D, vtkRectd* box);
 
+
+  /**
+   * Set/Get the axis titles
+   */
+  //@{
+  void setXAxisTitle(const QString &);
+  QString xAxisTitle() const;
+  void setYAxisTitle(const QString &);
+  QString yAxisTitle() const;
+  //@}
 public slots:
   void onTransfer2DChanged();
 
