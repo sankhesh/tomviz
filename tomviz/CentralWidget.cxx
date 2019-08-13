@@ -187,6 +187,7 @@ void CentralWidget::setActiveModule(Module* module)
       connect(v, &ModuleVolume::transfer2DYAxisScalarsChanged, this,
               [=](const QString& s) {
                 m_transfer2DYaxis = s;
+                m_ui->histogram2DWidget->setYAxisTitle(s);
                 refreshHistogram();
               });
     }
