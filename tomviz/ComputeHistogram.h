@@ -7,6 +7,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkImageData.h>
 #include <vtkMath.h>
+#include <vtkPointData.h>
 
 #include <cmath>
 
@@ -108,7 +109,8 @@ void CalculateHistogram(T* values, const vtkIdType numTuples,
 template <typename T>
 void Calculate2DHistogram(T* values, const int* dim, const int numComp,
                           const double* range, vtkImageData* histogram,
-                          double spacing[3])
+                          double spacing[3], T* yAxisValues,
+                          const double* yRange)
 {
   // Assumes all inputs are valid
   // Expects histogram image to be 1C double
@@ -187,11 +189,25 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
           const T value = values[strideSlice + centerIndex * numComp];
           const vtkIdType valueIndex = static_cast<vtkIdType>(
             (value - range[0]) * (bins[1] - 1) / (range[1] - range[0]));
+          if (yAxisValues && yRange)
+          {
+            const T yValue = yAxisValues[strideSlice + centerIndex * numComp];
+            const vtkIdType yAxisValueIndex = static_cast<vtkIdType>(
+                (yValue - yRange[0]) * (bins[1] - 1) / (yRange[1] - yRange[0]));
 
-          // Update histogram array
-          const vtkIdType tupleIndex = gradIndex * bins[0] + valueIndex;
-          double histogramValue = histogramArr->GetValue(tupleIndex);
-          histogramArr->SetValue(tupleIndex, ++histogramValue);
+            // Update histogram array
+            const vtkIdType tupleIndex = yAxisValueIndex * bins[0] + valueIndex;
+            double histogramValue = histogramArr->GetValue(tupleIndex);
+            histogramArr->SetValue(tupleIndex, ++histogramValue);
+          }
+          else
+          {
+
+            // Update histogram array
+            const vtkIdType tupleIndex = gradIndex * bins[0] + valueIndex;
+            double histogramValue = histogramArr->GetValue(tupleIndex);
+            histogramArr->SetValue(tupleIndex, ++histogramValue);
+          }
         }
       }
     }

@@ -93,7 +93,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   output->AddColumn(populations);
 }
 
-void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
+void Populate2DHistogram(vtkImageData* input, vtkImageData* output,
+                         QString YAxis)
 {
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 256;
@@ -122,10 +123,25 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
   double spacing[3];
   input->GetSpacing(spacing);
 
+  vtkSmartPointer<vtkDataArray> yAxisArrayPtr =
+    input->GetPointData()->GetArray(YAxis.toLatin1().constData());
+  void * yPtr = 0;
+  double yRange[2] = {0.0, 0.0};
+  if (yAxisArrayPtr)
+  {
+    yPtr = yAxisArrayPtr->GetVoidPointer(0);
+    yAxisArrayPtr->GetFiniteRange(yRange, -1);
+    if (yRange[0] == yRange[1]) {
+      yRange[1] = yRange[0] + 1.0;
+    }
+  }
+
+
   switch (arrayPtr->GetDataType()) {
     vtkTemplateMacro(tomviz::Calculate2DHistogram(
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)), dim, numComp,
-      minmax, output, spacing));
+      minmax, output, spacing,
+      reinterpret_cast<VTK_TT*>(yPtr), yRange));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
@@ -151,14 +167,16 @@ public slots:
                      vtkSmartPointer<vtkTable> output);
 
   void makeHistogram2D(vtkSmartPointer<vtkImageData> input,
-                       vtkSmartPointer<vtkImageData> output);
+                       vtkSmartPointer<vtkImageData> output,
+                       QString transfer2DYAxis);
 
 signals:
   void histogramDone(vtkSmartPointer<vtkImageData> image,
                      vtkSmartPointer<vtkTable> output);
 
   void histogram2DDone(vtkSmartPointer<vtkImageData> image,
-                       vtkSmartPointer<vtkImageData> output);
+                       vtkSmartPointer<vtkImageData> output,
+                       const QString&);
 };
 
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
@@ -173,12 +191,13 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
 }
 
 void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
-                                     vtkSmartPointer<vtkImageData> output)
+                                     vtkSmartPointer<vtkImageData> output,
+                                     QString transfer2DYAxis)
 {
   if (input && output) {
-    Populate2DHistogram(input, output);
+    Populate2DHistogram(input, output, transfer2DYAxis);
   }
-  emit histogram2DDone(input, output);
+  emit histogram2DDone(input, output, transfer2DYAxis);
 }
 
 HistogramManager::HistogramManager()
@@ -199,9 +218,11 @@ HistogramManager::HistogramManager()
                                       vtkSmartPointer<vtkTable>)));
   connect(m_histogramGen,
           SIGNAL(histogram2DDone(vtkSmartPointer<vtkImageData>,
-                                 vtkSmartPointer<vtkImageData>)),
+                                 vtkSmartPointer<vtkImageData>,
+                                 const QString&)),
           SLOT(histogram2DReadyInternal(vtkSmartPointer<vtkImageData>,
-                                        vtkSmartPointer<vtkImageData>)));
+                                        vtkSmartPointer<vtkImageData>,
+                                        const QString&)));
 }
 
 HistogramManager::~HistogramManager()
@@ -269,15 +290,16 @@ vtkSmartPointer<vtkTable> HistogramManager::getHistogram(
 }
 
 vtkSmartPointer<vtkImageData> HistogramManager::getHistogram2D(
-  vtkSmartPointer<vtkImageData> image)
+  vtkSmartPointer<vtkImageData> image, const QString& transfer2DYAxis)
 {
-  if (m_histogram2DCache.contains(image)) {
-    auto cachedHistogram = m_histogram2DCache[image];
+  auto p = std::make_pair(image, transfer2DYAxis);
+  if (m_histogram2DCache.contains(p)) {
+    auto cachedHistogram = m_histogram2DCache[p];
     if (cachedHistogram->GetMTime() > image->GetMTime()) {
       return cachedHistogram;
     } else {
       // Need to recalculate, clear the plots, and remove the cached data.
-      m_histogram2DCache.remove(image);
+      m_histogram2DCache.remove(p);
     }
   }
   if (m_histogram2DsInProgress.contains(image)) {
@@ -294,7 +316,8 @@ vtkSmartPointer<vtkImageData> HistogramManager::getHistogram2D(
   // gave here.
   QMetaObject::invokeMethod(m_histogramGen, "makeHistogram2D",
                             Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
-                            Q_ARG(vtkSmartPointer<vtkImageData>, histogram));
+                            Q_ARG(vtkSmartPointer<vtkImageData>, histogram),
+                            Q_ARG(QString, transfer2DYAxis));
   // The histogram cannot be returned for use while the background thread is
   // populating it.
   return nullptr;
@@ -309,9 +332,11 @@ void HistogramManager::histogramReadyInternal(
 }
 
 void HistogramManager::histogram2DReadyInternal(
-  vtkSmartPointer<vtkImageData> image, vtkSmartPointer<vtkImageData> histogram)
+  vtkSmartPointer<vtkImageData> image, vtkSmartPointer<vtkImageData> histogram,
+  const QString& transfer2DYAxis)
 {
-  m_histogram2DCache[image] = histogram;
+  auto p = std::make_pair(image, transfer2DYAxis);
+  m_histogram2DCache[p] = histogram;
   m_histogram2DsInProgress.removeAll(image);
   emit this->histogram2DReady(image, histogram);
 }

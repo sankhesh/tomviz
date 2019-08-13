@@ -30,7 +30,7 @@ public:
 
   vtkSmartPointer<vtkTable> getHistogram(vtkSmartPointer<vtkImageData> image);
   vtkSmartPointer<vtkImageData> getHistogram2D(
-    vtkSmartPointer<vtkImageData> image);
+    vtkSmartPointer<vtkImageData> image, const QString& transfer2DYaxis);
 
 signals:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
@@ -41,14 +41,15 @@ private slots:
   void histogramReadyInternal(vtkSmartPointer<vtkImageData>,
                               vtkSmartPointer<vtkTable>);
   void histogram2DReadyInternal(vtkSmartPointer<vtkImageData> input,
-                                vtkSmartPointer<vtkImageData> output);
+                                vtkSmartPointer<vtkImageData> output,
+                                const QString&);
 
 private:
   HistogramManager();
   ~HistogramManager();
 
   QMap<vtkImageData*, vtkSmartPointer<vtkTable>> m_histogramCache;
-  QMap<vtkImageData*, vtkSmartPointer<vtkImageData>> m_histogram2DCache;
+  QMap<std::pair<vtkImageData*, QString>, vtkSmartPointer<vtkImageData>> m_histogram2DCache;
   QList<vtkImageData*> m_histogramsInProgress;
   QList<vtkImageData*> m_histogram2DsInProgress;
   HistogramMaker* m_histogramGen;
