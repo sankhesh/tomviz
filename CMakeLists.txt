@@ -108,7 +108,7 @@ if(NOT PARAVIEW_BUILD_QT_GUI)
     "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
     "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE.")
 endif()
-if(NOT PARAVIEW_ENABLE_PYTHON)
+if(NOT PARAVIEW_USE_PYTHON)
   message(FATAL_ERROR
     "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
     "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
